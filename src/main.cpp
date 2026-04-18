@@ -164,6 +164,10 @@ int main() {
     InitWindow(window.width, window.height, window.title);
     SetTargetFPS(240);
 
+    InitAudioDevice();
+
+    const Sound collisionSound = LoadSound("../res/collision.wav");
+
     PlayerPaddle player((Rectangle) {
         .x = 40.0f,
         .y = (float)((window.height / 2.0f) - 50.0f),
@@ -186,6 +190,7 @@ int main() {
         std::pair<bool, Paddle> res = ball.isHitPaddles({player});
         if (res.first) {
             ball.applyHitPaddles({player}, res.second);
+            PlaySound(collisionSound);
         }
         ball.applyVelocity();
 
@@ -208,6 +213,9 @@ int main() {
         EndDrawing();
     }
 
+    UnloadSound(collisionSound);
+
+    CloseAudioDevice();
     CloseWindow();
 
     return 0;
