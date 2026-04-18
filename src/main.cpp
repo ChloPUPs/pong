@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <cstdint>
-#include <initializer_list>
+#include <array>
 #include <cmath>
 #include <utility>
 #include <raylib.h>
@@ -60,11 +60,12 @@ public:
 class Paddle : public GameObject {
 public:
     Direction side;
+    int32_t points;
 
     Paddle(Rectangle initDest, float speed, Direction side)
-    : GameObject(initDest, speed), side(side) {}
+    : GameObject(initDest, speed), side(side), points(0) {}
 
-    Paddle() : GameObject(), side(DIR_LEFT) {}
+    Paddle() : GameObject(), side(DIR_LEFT), points(0) {}
 };
 
 class PlayerPaddle : public Paddle {
@@ -112,33 +113,31 @@ public:
     }
 
     // This code is so bad
-    std::pair<bool, Paddle> isHitPaddles(std::initializer_list<Paddle> paddles) {
-        for (Paddle paddle : paddles) {
-            switch (paddle.side) {
+    template <size_t N>
+    std::pair<bool, Paddle*> isHitPaddles(std::array<Paddle*, N> paddles) {
+        for (Paddle *paddle : paddles) {
+            switch (paddle->side) {
                 case DIR_LEFT:
-                    if ((paddle.dest.x + paddle.dest.width) - 12.0f > this->dest.x) {
-                        Paddle p;
-                        return {false, p};
+                    if ((paddle->dest.x + paddle->dest.width) - 12.0f > this->dest.x) {
+                        return std::pair{false, nullptr};
                     }
                     break;
                 case DIR_RIGHT:
-                    if (paddle.dest.x + 12.0f < this->dest.x) {
-                        Paddle p;
-                        return {false, p};
+                    if (paddle->dest.x + 12.0f < this->dest.x) {
+                        return std::pair{false, nullptr};
                     }
                     break;
             }
 
-            bool collided = CheckCollisionRecs(this->dest, paddle.dest);
+            bool collided = CheckCollisionRecs(this->dest, paddle->dest);
             if (collided) {
-                return {true, paddle};
+                return std::pair{true, paddle};
             } else {
-                Paddle p;
-                return {false, p};
+                return std::pair{false, nullptr};
             }
         }
         Paddle p;
-        return {false, p};
+        return std::pair{false, nullptr};
     }
 
     void applyHitPaddles(std::initializer_list<Paddle> paddles, Paddle hitPaddle) {
@@ -187,9 +186,10 @@ int main() {
         player.applyVelocity();
 
         ball.handleWallCollision(window);
-        std::pair<bool, Paddle> res = ball.isHitPaddles({player});
-        if (res.first) {
-            ball.applyHitPaddles({player}, res.second);
+        std::pair<bool, Paddle*> res = ball.isHitPaddles<1>({&player});
+        if (res.first || res.second) {
+            ball.applyHitPaddles({player}, *res.second);
+            res.second->points += 1;
             PlaySound(collisionSound);
         }
         ball.applyVelocity();
@@ -210,6 +210,8 @@ int main() {
                 player.dest.height,
                 WHITE
             );
+            std::string t = std::to_string(player.points);
+            DrawText(t.c_str(), 120, window.height / 2 - 32, 64, WHITE);
         EndDrawing();
     }
 
