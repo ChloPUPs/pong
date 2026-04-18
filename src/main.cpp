@@ -175,7 +175,7 @@ int main() {
     }, 230.0f, DIR_LEFT);
 
     Ball ball((Rectangle) {
-        .x = (float)((window.width / 2.0f) - 10.0f),
+        .x = (float)((window.width * (2.0f / 3.0f)) - 10.0f),
         .y = (float)((window.height / 2.0f) - 10.0f),
         .width = 20.0f,
         .height = 20.0f,
