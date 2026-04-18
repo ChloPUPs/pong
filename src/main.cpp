@@ -32,6 +32,17 @@ public:
         this->dir.y = 0.0f;
     }
 
+    GameObject() : speed(0.0f) {
+        this->dest = (Rectangle) {
+            .x = 0.0f,
+            .y = 0.0f,
+            .width = 0.0f,
+            .height = 0.0f,
+        };
+        this->dir = (Vector2) {0.0f, 0.0f};
+        this->vel = (Vector2) {0.0f, 0.0f};
+    }
+
     void applyVelocity() {
         dest.x += vel.x * GetFrameTime();
         dest.y += vel.y * GetFrameTime();
@@ -52,12 +63,16 @@ public:
 
     Paddle(Rectangle initDest, float speed, Direction side)
     : GameObject(initDest, speed), side(side) {}
+
+    Paddle() : GameObject(), side(DIR_LEFT) {}
 };
 
 class PlayerPaddle : public Paddle {
 public:
     PlayerPaddle(Rectangle initDest, float speed, Direction side)
     : Paddle(initDest, speed, side) {}
+
+    PlayerPaddle() : Paddle() {}
 
     void input() {
         this->dir.y = -IsKeyDown(KEY_UP) + IsKeyDown(KEY_DOWN);
@@ -69,6 +84,8 @@ class EnemyPaddle : public Paddle {
 public:
     EnemyPaddle(Rectangle initDest, float speed, Direction side)
     : Paddle(initDest, speed, side) {}
+
+    EnemyPaddle() : Paddle() {}
 };
 
 class Ball : public GameObject {
@@ -94,28 +111,19 @@ public:
         }
     }
 
+    // This code is so bad
     std::pair<bool, Paddle> isHitPaddles(std::initializer_list<Paddle> paddles) {
         for (Paddle paddle : paddles) {
             switch (paddle.side) {
                 case DIR_LEFT:
                     if ((paddle.dest.x + paddle.dest.width) - 12.0f > this->dest.x) {
-                        Paddle p((Rectangle) {
-                            .x = 0.0f,
-                            .y = 0.0f,
-                            .width = 0.0f,
-                            .height = 0.0f,
-                        }, 0.0f, DIR_LEFT);
+                        Paddle p;
                         return {false, p};
                     }
                     break;
                 case DIR_RIGHT:
                     if (paddle.dest.x + 12.0f < this->dest.x) {
-                        Paddle p((Rectangle) {
-                            .x = 0.0f,
-                            .y = 0.0f,
-                            .width = 0.0f,
-                            .height = 0.0f,
-                        }, 0.0f, DIR_LEFT);
+                        Paddle p;
                         return {false, p};
                     }
                     break;
@@ -125,21 +133,11 @@ public:
             if (collided) {
                 return {true, paddle};
             } else {
-                Paddle p((Rectangle) {
-                    .x = 0.0f,
-                    .y = 0.0f,
-                    .width = 0.0f,
-                    .height = 0.0f,
-                }, 0.0f, DIR_LEFT);
+                Paddle p;
                 return {false, p};
             }
         }
-        Paddle p((Rectangle) {
-                    .x = 0.0f,
-                    .y = 0.0f,
-                    .width = 0.0f,
-                    .height = 0.0f,
-        }, 0.0f, DIR_LEFT);
+        Paddle p;
         return {false, p};
     }
 
