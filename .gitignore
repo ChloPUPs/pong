@@ -1,3 +1,7 @@
+# libraries
+include/
+lib/
+
 # binaries
 bin/
 
