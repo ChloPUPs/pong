@@ -57,9 +57,9 @@ int main() {
 
     PlayerPaddle player((Rectangle) {
         .x = 40.0f,
-        .y = (float)(window.height / 2.0f),
+        .y = (float)((window.height / 2.0f) - 50.0f),
         .width = 20.0f,
-        .height = 60.0f,
+        .height = 100.0f,
     }, 230.0f);
 
     while (!WindowShouldClose()) {
