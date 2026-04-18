@@ -65,6 +65,20 @@ public:
     Paddle(Rectangle initDest, float speed, Direction side)
     : GameObject(initDest, speed), side(side), points(0) {}
 
+    bool isOutOfBounds() {
+        return this->dest.y < 0.0f || this->dest.y;
+    }
+
+    // Moves the paddle back in bounds if it out is out of bounds.
+    void ifOutMoveIn(WindowDetails window) {
+        while (this->dest.y < 0.0f) {
+            this->dest.y += 1.0f;
+        }
+        while (this->dest.y > (window.height - this->dest.height)) {
+            this->dest.y -= 1.0f;
+        }
+    }
+
     Paddle() : GameObject(), side(DIR_LEFT), points(0) {}
 };
 
@@ -76,17 +90,12 @@ public:
     PlayerPaddle() : Paddle() {}
 
     void input() {
-        this->dir.y = -IsKeyDown(KEY_UP) + IsKeyDown(KEY_DOWN);
+        if (this->side == DIR_RIGHT)
+            this->dir.y = -IsKeyDown(KEY_UP) + IsKeyDown(KEY_DOWN);
+        else
+            this->dir.y = -IsKeyDown(KEY_W) + IsKeyDown(KEY_S);
         this->vel.y = dir.y * speed;
     }
-};
-
-class EnemyPaddle : public Paddle {
-public:
-    EnemyPaddle(Rectangle initDest, float speed, Direction side)
-    : Paddle(initDest, speed, side) {}
-
-    EnemyPaddle() : Paddle() {}
 };
 
 class Ball : public GameObject {
@@ -119,12 +128,12 @@ public:
             switch (paddle->side) {
                 case DIR_LEFT:
                     if ((paddle->dest.x + paddle->dest.width) - 12.0f > this->dest.x) {
-                        return std::pair{false, nullptr};
+                        continue;
                     }
                     break;
                 case DIR_RIGHT:
                     if (paddle->dest.x + 12.0f < this->dest.x) {
-                        return std::pair{false, nullptr};
+                        continue;
                     }
                     break;
             }
@@ -133,14 +142,14 @@ public:
             if (collided) {
                 return std::pair{true, paddle};
             } else {
-                return std::pair{false, nullptr};
+                continue;
             }
         }
         Paddle p;
         return std::pair{false, nullptr};
     }
 
-    void applyHitPaddles(std::initializer_list<Paddle> paddles, Paddle hitPaddle) {
+    void applyHitPaddles(Paddle hitPaddle) {
         std::cout << "Hit!\n";
         this->vel.x = -this->vel.x;
         switch (hitPaddle.side) {
@@ -167,12 +176,18 @@ int main() {
 
     const Sound collisionSound = LoadSound("../res/collision.wav");
 
-    PlayerPaddle player((Rectangle) {
+    PlayerPaddle player1((Rectangle) {
         .x = 40.0f,
         .y = (float)((window.height / 2.0f) - 50.0f),
         .width = 20.0f,
         .height = 100.0f,
     }, 230.0f, DIR_LEFT);
+    PlayerPaddle player2((Rectangle) {
+        .x = (window.width - 40.f) - 20.0f,
+        .y = (float)((window.height / 2.0f) - 50.0f),
+        .width = 20.0f,
+        .height = 100.0f,
+    }, 230.0f, DIR_RIGHT);
 
     Ball ball((Rectangle) {
         .x = (float)((window.width * (2.0f / 3.0f)) - 10.0f),
@@ -182,15 +197,19 @@ int main() {
     }, 140.0f);
 
     while (!WindowShouldClose()) {
-        player.input();
-        player.applyVelocity();
+        player1.input();
+        player2.input();
+        player1.applyVelocity();
+        player2.applyVelocity();
+        player1.ifOutMoveIn(window);
+        player2.ifOutMoveIn(window);
 
         ball.handleWallCollision(window);
         // I could probably just return the pointer by itself and check if it is null or not
         // that might be marginally less safe though so idk
-        std::pair<bool, Paddle*> res = ball.isHitPaddles<1>({&player});
+        std::pair<bool, Paddle*> res = ball.isHitPaddles<2>({&player1, &player2});
         if (res.first && res.second) {
-            ball.applyHitPaddles({player}, *res.second);
+            ball.applyHitPaddles(*res.second);
             res.second->points += 1;
             PlaySound(collisionSound);
         }
@@ -206,14 +225,23 @@ int main() {
                 WHITE
             );
             DrawRectangle(
-                player.dest.x,
-                player.dest.y,
-                player.dest.width,
-                player.dest.height,
+                player1.dest.x,
+                player1.dest.y,
+                player1.dest.width,
+                player1.dest.height,
                 WHITE
             );
-            std::string t = std::to_string(player.points);
-            DrawText(t.c_str(), 120, window.height / 2 - 32, 64, WHITE);
+            DrawRectangle(
+                player2.dest.x,
+                player2.dest.y,
+                player2.dest.width,
+                player2.dest.height,
+                WHITE
+            );
+            std::string t1 = std::to_string(player1.points);
+            DrawText(t1.c_str(), 120, window.height / 2 - 32, 64, WHITE);
+            std::string t2 = std::to_string(player2.points);
+            DrawText(t2.c_str(), window.width - 120 - MeasureText(t2.c_str(), 64), window.height / 2 - 32, 64, WHITE);
         EndDrawing();
     }
 
