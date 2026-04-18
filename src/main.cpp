@@ -189,7 +189,7 @@ int main() {
         // I could probably just return the pointer by itself and check if it is null or not
         // that might be marginally less safe though so idk
         std::pair<bool, Paddle*> res = ball.isHitPaddles<1>({&player});
-        if (res.first || res.second) {
+        if (res.first && res.second) {
             ball.applyHitPaddles({player}, *res.second);
             res.second->points += 1;
             PlaySound(collisionSound);
